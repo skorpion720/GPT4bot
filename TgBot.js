@@ -282,7 +282,6 @@ async function gpttext(a,chatid,userid) {
       LIMIT 15
     `);
     DBm.release();
-    
     sel.forEach(row => {
       messages.push({ role: "user", content: row.text });
       messages.push({ role: "assistant", content: row.response });
@@ -292,10 +291,6 @@ async function gpttext(a,chatid,userid) {
     console.log(e);
   }
 
-console.log(messages);
-//   const messages = [
-//     { role: "user", content: a}
-// ];
 const options = {
   provider: g4f.providers.GPT,
   debug: true,
@@ -310,8 +305,12 @@ function gptimage(a) {
       try {
         const base64Image = await g4f.imageGeneration(a, { 
           debug: true,
-          source: "ua",
-          provider: g4f.providers.Emi
+          provider: g4f.providers.Prodia,
+          providerOptions: {
+              model: "ICantBelieveItsNotPhotography_seco.safetensors [4e7a3dfd]",
+              samplingSteps: 15,
+              cfgScale: 30
+          }
       });	
 
           const imageBuffer = Buffer.from(base64Image, 'base64');
