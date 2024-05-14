@@ -223,7 +223,7 @@ bot.on("message", async (ctx) => {
 
 //////////////////////////////////////////////////////////////////////////////////
     if(sw =='text' && text !='/text' && text !='/image' && text !='/info'){
-      res = await gpttext(text);
+      res = await gpttext(text,chat.id,from.id);
       ctx.reply(res, {
         reply_to_message_id: message_id,
       });
@@ -271,10 +271,31 @@ function log(a) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////
-async function gpttext(a) {
-  const messages = [
-    { role: "user", content: a}
-];
+async function gpttext(a,chatid,userid) {
+  let messages = [];
+  try {
+    const DBm = await DB.getConnection();
+    const sel = await DBm.query(`
+      SELECT text, response, date FROM GPT4BOT_MESSAGE
+      WHERE chatid = '${chatid}' AND id_user = '${userid}'
+      ORDER BY date 
+      LIMIT 15
+    `);
+    DBm.release();
+    
+    sel.forEach(row => {
+      messages.push({ role: "user", content: row.text });
+      messages.push({ role: "assistant", content: row.response });
+    });
+    messages.push({ role: "user", content: a });
+  } catch (e) {
+    console.log(e);
+  }
+
+console.log(messages);
+//   const messages = [
+//     { role: "user", content: a}
+// ];
 const options = {
   provider: g4f.providers.GPT,
   debug: true,
