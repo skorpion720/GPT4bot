@@ -152,6 +152,7 @@ bot.on("message", async (ctx) => {
     chatname = chat.title;
   }
   let text = ctx.message.text;
+  if(text != undefined){
   let message_id = ctx.message.message_id;
   let sw;
   let resqwery;
@@ -160,6 +161,7 @@ bot.on("message", async (ctx) => {
   resqwery = result;
   sw = result.swich;
   }
+  
 
 
     switch (text) {
@@ -255,7 +257,7 @@ if (sw == 'image' && text != '/text' && text != '/image' && text != '/info') {
 
 
 
-
+}
 });
 
 bot.launch();
