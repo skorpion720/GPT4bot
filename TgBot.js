@@ -25,8 +25,8 @@ async function DBconnect (){
     CREATE TABLE IF NOT EXISTS GPT4BOT (
       id INT AUTO_INCREMENT PRIMARY KEY,
       chatid VARCHAR(255),
-      text VARCHAR(255),
-      response VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+      text text,
+      response text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
       id_user VARCHAR(255),
       firstname VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
       username VARCHAR(255),
@@ -38,8 +38,8 @@ async function DBconnect (){
   CREATE TABLE IF NOT EXISTS GPT4BOT_MESSAGE (
     id INT AUTO_INCREMENT PRIMARY KEY,
     chatid VARCHAR(255),
-    text VARCHAR(255)     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-    response VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+    text text     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+    response text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
     id_user VARCHAR(255),
     firstname VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
     username VARCHAR(255),
@@ -225,11 +225,11 @@ bot.on("message", async (ctx) => {
     if(sw =='text' && text !='/text' && text !='/image' && text !='/info'){
       res = await gpttext(text,chat.id,from.id);
       ctx.reply(res, {
-        reply_to_message_id: message_id,
+        reply_to_message_id: message_id ,
+        parse_mode: "MarkdownV2",
+      
       });
-      let croppedTextSubstring = res.substring(0, 250);
-      let croppedText = text.substring(0, 250);
-      let insertResult = await DBmessage(chat.id,croppedText,croppedTextSubstring,from.first_name,from.username,from.id,chatname);
+      let insertResult = await DBmessage(chat.id, text, res, from.first_name, from.username, from.id,chatname);
     }
 //////////////////////////////////////////////////////////////////////////////////
 if (sw == 'image' && text != '/text' && text != '/image' && text != '/info') {
