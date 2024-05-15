@@ -96,7 +96,6 @@ async function DBupdate(sw,id){
     console.log(e);
   }
 }
-
 async function DBselect(chatid, userid) {
   let str = null; 
   try {
@@ -113,7 +112,6 @@ async function DBselect(chatid, userid) {
   }
   return str;
 }
-
 bot.start( async (ctx) => {
   ctx.reply("Привіт, я GPT4")
   let chatid = ctx.message.chat.id;
@@ -139,10 +137,6 @@ bot.help( async (ctx) => {
   ctx.reply("text - Текстова модель \nimage - Генератор зображень \ninfo - Твої налаштування")
   
 });
-
-
-
-
 
 bot.on("message", async (ctx) => {
   let from = ctx.message.from;
@@ -202,7 +196,6 @@ bot.on("message", async (ctx) => {
        case '/info':
         if(resqwery){
         ctx.reply('Налаштування: ' + from.first_name + '\n' + 'Тип: ' +  resqwery.swich);  }
-      
        break;
     }
     if(resqwery){
@@ -212,27 +205,22 @@ bot.on("message", async (ctx) => {
           sw ='text'
           let ins = `${chat.id}, ' ','${chatname}' ,'${from.first_name}', '${from.username}', ${from.id}, '${sw}'`;
           let insertResult = await DBinsert(ins);
-          
-      } catch (error) {
+      }catch (error) {
         console.error(error);
       }
     }
-
- 
 
 //////////////////////////////////////////////////////////////////////////////////
     if(sw =='text' 
     && text !='/text' 
     && text !='/image' 
     && text !='/info' 
-    && ctx.message.reply_to_message.from.id == getme
-    ){
+    && ctx.message.reply_to_message.from.id == getme){
       res = await gpttext(text,chat.id,from.id);
-      res = res.replace(/([_*[\]()~`>#+=\|{}.!])/g, '\\$1');
-      ctx.reply(res, {
+      replace = res.replace(/[\!\.\<\>\(\)\#\&\|\{\}\[\]]/g, '\\$&');
+      ctx.reply(replace, {
         reply_to_message_id: message_id ,
         parse_mode: "MarkdownV2",
-      
       });
       let insertResult = await DBmessage(chat.id, text, res, from.first_name, from.username, from.id,chatname);
     }
@@ -241,13 +229,12 @@ bot.on("message", async (ctx) => {
     && text != '/text' 
     && text != '/image' 
     && text != '/info' 
-    && ctx.message.reply_to_message.from.id == getme
-    ) {
-  ctx.reply('Генерую зображення...', {
+    && ctx.message.reply_to_message.from.id == getme) {
+    ctx.reply('Генерую зображення...', {
     reply_to_message_id: message_id,
-  });
+    });
 
-  try {
+    try {
     const photoPath = await gptimage(text);
     const photo = fs.readFileSync(photoPath);
 
@@ -258,7 +245,7 @@ bot.on("message", async (ctx) => {
     if(text){
     let croppedText = text.substring(0, 250);
     let insertResult = await DBmessage(chat.id, croppedText ,'Картинка', from.first_name, from.username, from.id, chatname);
-  }} catch (error) {
+    }} catch (error) {
     console.error("Помилка під час генерації фотографії:", error);
   }
 }
