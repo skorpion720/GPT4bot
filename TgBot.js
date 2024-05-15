@@ -221,7 +221,12 @@ bot.on("message", async (ctx) => {
  
 
 //////////////////////////////////////////////////////////////////////////////////
-    if(sw =='text' && text !='/text' && text !='/image' && text !='/info' && ctx.message.reply_to_message.from.id == getme){
+    if(sw =='text' 
+    && text !='/text' 
+    && text !='/image' 
+    && text !='/info' 
+    && ctx.message.reply_to_message.from.id == getme
+    ){
       res = await gpttext(text,chat.id,from.id);
       res = res.replace(/([_*[\]()~`>#+=\|{}.!])/g, '\\$1');
       ctx.reply(res, {
@@ -232,7 +237,12 @@ bot.on("message", async (ctx) => {
       let insertResult = await DBmessage(chat.id, text, res, from.first_name, from.username, from.id,chatname);
     }
 //////////////////////////////////////////////////////////////////////////////////
-if (sw == 'image' && text != '/text' && text != '/image' && text != '/info' && ctx.message.reply_to_message.from.id == getme) {
+    if (sw == 'image' 
+    && text != '/text' 
+    && text != '/image' 
+    && text != '/info' 
+    && ctx.message.reply_to_message.from.id == getme
+    ) {
   ctx.reply('Генерую зображення...', {
     reply_to_message_id: message_id,
   });
