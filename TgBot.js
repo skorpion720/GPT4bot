@@ -19,12 +19,77 @@ const DB = mariadb.createPool({
 DBconnect();
 const fs = require("fs");
 
+function log(a) {
+  console.log(a);
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+async function launchBot() {
+  try {
+    const botInfo = await bot.telegram.getMe();
+    getme = botInfo.id;
+    console.log(getme);
+    await bot.launch();
+  } catch (error) {
+    console.error(`Failed to launch the bot: ${error.message}`);
+  }
+}
+async function gpttext(a,chatid,userid) {
+  let messages = [];
+  try {
+    const DBm = await DB.getConnection();
+    const sel = await DBm.query(`
+      SELECT text, response, date FROM GPT4BOT_MESSAGE
+      WHERE chatid = '${chatid}' AND id_user = '${userid}'
+      ORDER BY date 
+      LIMIT 15
+    `);
+    DBm.release();
+    sel.forEach(row => {
+      messages.push({ role: "user", content: row.text });
+      messages.push({ role: "assistant", content: row.response });
+    });
+    messages.push({ role: "user", content: a });
+  } catch (e) {
+    console.log(e);
+  }
+
+const options = {
+  provider: g4f.providers.GPT,
+  debug: true,
+  source: "UA",
+};
+return g4f.chatCompletion(messages, options); 
+}
+//////////////////////////////////////////////////////////////////////////////////
+
+function gptimage(a) {
+  return new Promise(async (resolve, reject) => {
+      try {
+        const base64Image = await g4f.imageGeneration(a, { 
+          debug: true,
+          provider: g4f.providers.Prodia,
+          providerOptions: {
+              model: "ICantBelieveItsNotPhotography_seco.safetensors [4e7a3dfd]",
+              samplingSteps: 15,
+              cfgScale: 30
+          }
+      });	
+
+          const imageBuffer = Buffer.from(base64Image, 'base64');
+           fs.writeFileSync('res.jpg', imageBuffer);
+          resolve('res.jpg');
+      } catch (error) {
+          reject(error);
+      }
+  });
+}
 
 async function DBconnect (){
   try{
     DBm = await DB.getConnection();
     DBm.query(`
-    CREATE TABLE IF NOT EXISTS GPT4BOT (
+      CREATE TABLE IF NOT EXISTS GPT4BOT (
       id INT AUTO_INCREMENT PRIMARY KEY,
       chatid VARCHAR(255),
       text text,
@@ -33,22 +98,18 @@ async function DBconnect (){
       firstname VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
       username VARCHAR(255),
       swich VARCHAR(255),
-      date DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-  `)
-  DBm.query(`
-  CREATE TABLE IF NOT EXISTS GPT4BOT_MESSAGE (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    chatid VARCHAR(255),
-    text text     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-    response text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-    id_user VARCHAR(255),
-    firstname VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-    username VARCHAR(255),
-    swich VARCHAR(255)     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-    date DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-`)
+      date DATETIME DEFAULT CURRENT_TIMESTAMP);`)
+    DBm.query(`
+      CREATE TABLE IF NOT EXISTS GPT4BOT_MESSAGE (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      chatid VARCHAR(255),
+      text text     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+      response text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+      id_user VARCHAR(255),
+      firstname VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+      username VARCHAR(255),
+      swich VARCHAR(255)     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+      date DATETIME DEFAULT CURRENT_TIMESTAMP);`)
 
   .then(() => {
     console.log('Готово Машка дб');
@@ -217,7 +278,7 @@ bot.on("message", async (ctx) => {
     && text !='/info' 
     && ctx.message.reply_to_message.from.id == getme){
       res = await gpttext(text,chat.id,from.id);
-      replace = res.replace(/[\!\.\<\>\(\)\#\&\|\{\}\[\]]/g, '\\$&');
+      replace = res.replace(/[\!\.\-\<\>\(\)\#\&\|\{\}\[\]]/g, '\\$&');
       ctx.reply(replace, {
         reply_to_message_id: message_id ,
         parse_mode: "MarkdownV2",
@@ -251,84 +312,15 @@ bot.on("message", async (ctx) => {
 }
 //////////////////////////////////////////////////////////////////////////////////
 
-
-
-
 }
 });
-async function launchBot() {
-  try {
-    const botInfo = await bot.telegram.getMe();
-    getme = botInfo.id;
-    console.log(getme);
-    await bot.launch();
-  } catch (error) {
-    console.error(`Failed to launch the bot: ${error.message}`);
-  }
-}
-
-launchBot();
-
 
 
 // Enable graceful stop
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
-//////////////////////////////////////////////////////////////////////////////////
-function log(a) {
-  console.log(a);
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-async function gpttext(a,chatid,userid) {
-  let messages = [];
-  try {
-    const DBm = await DB.getConnection();
-    const sel = await DBm.query(`
-      SELECT text, response, date FROM GPT4BOT_MESSAGE
-      WHERE chatid = '${chatid}' AND id_user = '${userid}'
-      ORDER BY date 
-      LIMIT 15
-    `);
-    DBm.release();
-    sel.forEach(row => {
-      messages.push({ role: "user", content: row.text });
-      messages.push({ role: "assistant", content: row.response });
-    });
-    messages.push({ role: "user", content: a });
-  } catch (e) {
-    console.log(e);
-  }
-
-const options = {
-  provider: g4f.providers.GPT,
-  debug: true,
-  source: "UA",
-};
-return g4f.chatCompletion(messages, options); 
-}
+launchBot();
 //////////////////////////////////////////////////////////////////////////////////
 
-function gptimage(a) {
-  return new Promise(async (resolve, reject) => {
-      try {
-        const base64Image = await g4f.imageGeneration(a, { 
-          debug: true,
-          provider: g4f.providers.Prodia,
-          providerOptions: {
-              model: "ICantBelieveItsNotPhotography_seco.safetensors [4e7a3dfd]",
-              samplingSteps: 15,
-              cfgScale: 30
-          }
-      });	
-
-          const imageBuffer = Buffer.from(base64Image, 'base64');
-           fs.writeFileSync('res.jpg', imageBuffer);
-          resolve('res.jpg');
-      } catch (error) {
-          reject(error);
-      }
-  });
-}
 
 
