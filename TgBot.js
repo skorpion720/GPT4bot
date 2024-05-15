@@ -3,9 +3,11 @@ const { Telegraf } = require('telegraf')
 const { message } = require('telegraf/filters')
 const env = require('dotenv')
 const mariadb = require('mariadb');
+var getme;
 env.config();
 const g4f = new G4F();
 const bot = new Telegraf(process.env.BOT_TOKEN);
+
 const DB = mariadb.createPool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
@@ -95,9 +97,6 @@ async function DBupdate(sw,id){
   }
 }
 
-
-
-
 async function DBselect(chatid, userid) {
   let str = null; 
   try {
@@ -143,6 +142,8 @@ bot.help( async (ctx) => {
 
 
 
+
+
 bot.on("message", async (ctx) => {
   let from = ctx.message.from;
   let chat = ctx.message.chat;
@@ -161,7 +162,7 @@ bot.on("message", async (ctx) => {
   resqwery = result;
   sw = result.swich;
   }
-  
+  console.log(ctx.message.reply_to_message.id)
 
 
     switch (text) {
@@ -170,7 +171,6 @@ bot.on("message", async (ctx) => {
         sw = 'text';
         if(resqwery){
           await DBupdate(sw,resqwery.id);
-          console.log('Update')
         }else{
           try {
             let ins = `${chat.id}, ' ','${chatname}' , '${from.first_name}', '${from.username}', ${from.id}, '${sw}'`;
@@ -185,7 +185,6 @@ bot.on("message", async (ctx) => {
         sw = 'image';
         if(resqwery){
           await DBupdate(sw,resqwery.id);
-          console.log('Update')
         }else{
           try {
               let ins = `${chat.id}, ' ','${chatname}' ,'${from.first_name}', '${from.username}', ${from.id}, '${sw}'`;
@@ -208,7 +207,6 @@ bot.on("message", async (ctx) => {
     }
     if(resqwery){
       await DBupdate(sw,resqwery.id);
-      console.log('Update')
     }else{
       try {
           sw ='text'
@@ -220,10 +218,12 @@ bot.on("message", async (ctx) => {
       }
     }
 
+ 
 
 //////////////////////////////////////////////////////////////////////////////////
-    if(sw =='text' && text !='/text' && text !='/image' && text !='/info'){
+    if(sw =='text' && text !='/text' && text !='/image' && text !='/info' && ctx.message.reply_to_message.from.id == getme){
       res = await gpttext(text,chat.id,from.id);
+      res = res.replace(/([_*[\]()~`>#+=\|{}.!])/g, '\\$1');
       ctx.reply(res, {
         reply_to_message_id: message_id ,
         parse_mode: "MarkdownV2",
@@ -232,7 +232,7 @@ bot.on("message", async (ctx) => {
       let insertResult = await DBmessage(chat.id, text, res, from.first_name, from.username, from.id,chatname);
     }
 //////////////////////////////////////////////////////////////////////////////////
-if (sw == 'image' && text != '/text' && text != '/image' && text != '/info') {
+if (sw == 'image' && text != '/text' && text != '/image' && text != '/info' && ctx.message.reply_to_message.from.id == getme) {
   ctx.reply('Генерую зображення...', {
     reply_to_message_id: message_id,
   });
@@ -259,8 +259,20 @@ if (sw == 'image' && text != '/text' && text != '/image' && text != '/info') {
 
 }
 });
+async function launchBot() {
+  try {
+    const botInfo = await bot.telegram.getMe();
+    getme = botInfo.id;
+    console.log(getme);
+    await bot.launch();
+  } catch (error) {
+    console.error(`Failed to launch the bot: ${error.message}`);
+  }
+}
 
-bot.launch();
+launchBot();
+
+
 
 // Enable graceful stop
 process.once("SIGINT", () => bot.stop("SIGINT"));
